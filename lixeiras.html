@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Reciclagem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .presentation {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .game-area {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .trash-cans {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+        .trash-can {
+            width: 180px;
+            height: 250px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .trash-can::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background-color: #666;
+            border-radius: 50% 50% 0 0;
+            clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+        }
+        .trash-can.black {
+            background: linear-gradient(to bottom, #333 0%, #000 100%);
+            color: white;
+        }
+        .trash-can.blue {
+            background: linear-gradient(to bottom, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        .trash-can.red {
+            background: linear-gradient(to bottom, #dc3545 0%, #a71e2a 100%);
+            color: white;
+        }
+        .trash-can span {
+            position: absolute;
+            bottom: 10px;
+            font-weight: bold;
+            z-index: 1;
+        }
+        .objects {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .object {
+            width: 100px;
+            height: 100px;
+            margin: 15px;
+            cursor: grab;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+        .object:hover {
+            transform: scale(1.1);
+        }
+        .object.organic { background-color: #8bc34a; }
+        .object.paper { background-color: #ffc107; }
+        .object.plastic { background-color: #ff5722; }
+        button {
+            padding: 12px 25px;
+            font-size: 20px;
+            background: linear-gradient(to right, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: linear-gradient(to right, #218838, #17a2b8);
+        }
+        .score {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .dropped-items {
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            right: 10px;
+            top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="presentation" class="presentation">
+            <h1>🌍 Bem-vindo ao Jogo de Reciclagem! 🌍</h1>
+            <p>A reciclagem é fundamental para preservar o meio ambiente. Ao separar corretamente o lixo, ajudamos a reduzir o desperdício, economizar recursos naturais e diminuir a poluição. Vamos aprender a diferenciar as lixeiras:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li><strong>🗑️ Lixeira Preta:</strong> Para materiais orgânicos (restos de comida, folhas, etc.)</li>
+                <li><strong>🗑️ Lixeira Azul:</strong> Para papel e papelão (jornais, caixas, etc.)</li>
+                <li><strong>🗑️ Lixeira Vermelha:</strong> Para plástico (garrafas, sacolas, etc.)</li>
+            </ul>
+            <p>Divirta-se jogando e aprendendo!</p>
+            <button onclick="startGame()">Jogar</button>
+        </div>
+        
+        <div id="game" class="game-area">
+            <h2>Arraste os objetos para as lixeiras corretas!</h2>
+            <div class="trash-cans">
+                <div class="trash-can black" id="organic-bin">
+                    <div class="dropped-items"></div>
+                    <span>Orgânica</span>
+                </div>
+                <div class="trash-can blue" id="paper-bin">
+                    <div class="dropped-items"></div>
+                    <span>Papel</span>
+                </div>
+                <div class="trash-can red" id="plastic-bin">
+                    <div class="dropped-items"></div>
+                    <span>Plástico</span>
+                </div>
+            </div>
+            <div class="objects">
+                <div class="object organic" draggable="true" data-type="organic">🍎</div>
+                <div class="object paper" draggable="true" data-type="paper">📰</div>
+                <div class="object plastic" draggable="true" data-type="plastic">🍼</div>
+                <div class="object organic" draggable="true" data-type="organic">🍂</div>
+                <div class="object paper" draggable="true" data-type="paper">📦</div>
+                <div class="object plastic" draggable="true" data-type="plastic">🛍️</div>
+            </div>
+            <div class="score" id="score">Pontuação: 0/6</div>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        const totalObjects = 6;
+
+        function startGame() {
+            document.getElementById('presentation').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+        }
+
+        // Adicionar event listeners para drag and drop
+        const objects = document.querySelectorAll('.object');
+        const bins = document.querySelectorAll('.trash-can');
+
+        objects.forEach(obj => {
+            obj.addEventListener('dragstart', dragStart);
+        });
+
+        bins.forEach(bin => {
+            bin.addEventListener('dragover', dragOver);
+            bin.addEventListener('drop', drop);
+        });
+
+        function dragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.type);
+            e.dataTransfer.setData('element', e.target.outerHTML);
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/plain');
+            const bin = e.target.closest('.trash-can');
+            const binType = bin.id.split('-')[0]; // organic, paper, plastic
+
+            if (type === binType) {
+                score++;
+                const droppedItems = bin.querySelector('.dropped-items');
+                const newItem = document.createElement('div');
+                newItem.innerHTML = e.dataTransfer.getData('element');
+                newItem.style.width = '50px';
+                newItem.style.height = '50px';
+                newItem.style.margin = '5px';
+                newItem.style.pointerEvents = 'none';
+                droppedItems.appendChild(newItem);
+                e.target.style.opacity = '0.5'; // Esconde o original temporariamente
+                document.getElementById('score').textContent = `Pontuação: ${score}/${totalObjects}`;
+                if (score === totalObjects) {
+                    alert('Parabéns! Você reciclou tudo corretamente!');
+                }
+            } else {
+                alert('Ops! Esse objeto não pertence a essa lixeira. Tente novamente.');
+            }
+        }
+    </script>
+</body>
+</html>
